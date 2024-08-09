@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 import argparse
-
+import csv
 
 class EmailGenerator(object):
 
     def __init__(self):
-
         parser = argparse.ArgumentParser()
         parser.add_argument('-d', '--domain', dest='domain', action='store', required=True)
         parser.add_argument('-f', '--file', dest='file', action='store', required=True)
         parser.add_argument('-m', '--method', dest='method', default="fn.ln", action='store', required=False)
-        parser.add_argument('-o', '--output_file_path', dest='output_file_path', default="emaillistoutput.txt", action='store', required=False)
+        parser.add_argument('-o', '--output_file_path', dest='output_file_path', default="emaillistoutput.csv", action='store', required=False)
 
         try:
             self.__args = parser.parse_args()
-        except Exception, err:
-            print "Error while parsing arguments"
+        except Exception as err:
+            print(f"Error while parsing arguments: {err}")
 
     def get_email(self, method, name, domain):
         first_name = ""
@@ -25,10 +24,10 @@ class EmailGenerator(object):
         middle_initial = ""
         last_initial = ""
 
-        #Split name by whitescpaces. This is requred because we need to know if the name contains a middle name.
+        # Split name by whitespaces. This is required because we need to know if the name contains a middle name.
         name_in_a_list = name.split()
 
-        #if the name length is 2, that means there is no middle name here. Just firstname and lastname
+        # if the name length is 2, that means there is no middle name here. Just firstname and lastname
         if len(name_in_a_list) == 2:
             first_name = name_in_a_list[0].lower()
             first_initial = first_name[0]
@@ -42,7 +41,7 @@ class EmailGenerator(object):
             last_name = name_in_a_list[2].lower()
             last_initial = last_name[0]
 
-        #Swtich case for the method string
+        # Switch case for the method string
         switcher = {
             "fn": first_name+'@'+domain,
             "ln": last_name+'@'+domain,
@@ -91,28 +90,29 @@ class EmailGenerator(object):
             "fn_mi_ln": first_name + '_' + middle_initial + '_' + last_name + '@' + domain,
             "fn_mn_ln": first_name + '_' + middle_name + '_' + last_name + '@' + domain,
         }
-        return switcher.get(method, "first_name + '.' + last_name + '@' + domain")
+        return switcher.get(method, first_name + '.' + last_name + '@' + domain)
 
     def _main(self):
-
-        #Read input file and create a list from the lines
+        # Read input file and create a list from the lines
         with open(self.__args.file) as f:
             names = f.readlines()
-        #Strip newline chararcters at the end of each line
+        # Strip newline characters at the end of each line
         names = [name.strip() for name in names]
 
-        #Get the domain from command line arguments
+        # Get the domain from command line arguments
         domain = self.__args.domain
 
-        #Open output file as writable
-        output_file = open(self.__args.output_file_path, 'w')
+        # Open output CSV file as writable
+        with open(self.__args.output_file_path, mode='w', newline='') as output_file:
+            writer = csv.writer(output_file)
+            # Write the header
+            writer.writerow(["NAME", "EMAIL"])
 
-        for name in names:
-            method = self.__args.method
-            email = self.get_email(method, name, domain)
-            output_file.write("%s\n" % email)
+            for name in names:
+                method = self.__args.method
+                email = self.get_email(method, name, domain)
+                writer.writerow([name, email])
 
-        output_file.close()
 ##
 ### Main, go go go!
 ##
